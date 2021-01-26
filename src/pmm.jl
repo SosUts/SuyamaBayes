@@ -40,3 +40,20 @@ function init_S(data, prior_model::BayesianPMM)
     K = length(prior_model.prior)
     onehotbatch(rand(Categorical(ones(K)./K), N), collect(1:K))
 end
+
+function add_stats(prior_model::BayesianPMM, data, S)
+    @argcheck length(prior_model.prior) == size(S, 1)
+    D = length(prior_model.prior[1])
+    K = size(S, 1)
+    sum_S = sum(S, dims=2)
+    α = [prior_model.α + sum_S[k] for k = 1:K]
+    XS = data'*S'
+
+    a = Vector{Float64}(undef, K)
+    b = Vector{Float64}(undef, K)
+    for k = 1:K
+        a[k] = prior_model.prior[k].α + XS[d, k] for d = 1:D
+        b[k] = prior_model.prior[k].θ + sum_S[k]
+    end
+    BayesianPMM(α, Gamma.(a, b))
+end
